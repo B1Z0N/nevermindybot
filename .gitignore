@@ -1,0 +1,4 @@
+appsettings.prod.json
+*bin*
+*obj*
+*.swp
