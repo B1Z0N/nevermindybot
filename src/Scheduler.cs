@@ -11,7 +11,7 @@ public static class Scheduler
     public static void InitJobStorage(string connectionString)
     {
         GlobalConfiguration.Configuration
-            // .UseColouredConsoleLogProvider()
+            .UseColouredConsoleLogProvider()
             .UsePostgreSqlStorage(connectionString);
     }
 

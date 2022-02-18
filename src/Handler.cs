@@ -87,7 +87,9 @@ public static class Handler
     {
         botClient.SendTextMessageAsync(chatId, message).Result.Discard();
 
+        Console.WriteLine(fib.Current);
         fib.Move();
+        Console.WriteLine(fib.Current);
         Scheduler.Schedule(() => SendMessage(chatId, message, fib), fib.Current);
     }
 
