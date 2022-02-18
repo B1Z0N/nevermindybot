@@ -13,8 +13,23 @@ using Telegram.Bot.Types.Enums;
 
 namespace nevermindy;
 
-public static class Handlers
+public static class Handler
 {
+    // static because 
+    // 1. It's simple, no need to create custom JSON serializer for TelegramBotClient
+    // 2. It's efficient, no need to keep botclient in storage, so we just keep the messages and recipients(see SendMessage)
+    public static ITelegramBotClient botClient;
+
+    public static void InitClient(string botAccessToken, CancellationToken ct)
+    {
+        botClient = new TelegramBotClient(botAccessToken);
+        botClient.StartReceiving(HandleUpdateAsync, HandleErrorAsync, new() { AllowedUpdates = { } }, ct);
+
+        Console.WriteLine($"Started nevermindy");
+    }
+
+    #region Handlers
+    
     public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
         var errorMessage = exception switch
@@ -50,27 +65,32 @@ public static class Handlers
         if (message.Type != MessageType.Text)
             return;
         
-        var action = message.Text!.Split(' ')[0] switch
-        {
-            "/start"   => HandleStart(botClient, message),
-            _          => HandleTodo(botClient, message)
-        };
-        Message sentMessage = await action;
+        if (message.Text!.Split(' ')[0] == "/start") await HandleStart(botClient, message);
+        else HandleTodo(botClient as TelegramBotClient, message);
     }
 
-    static async Task<Message> HandleStart(ITelegramBotClient botClient, Message message)
+    static async Task HandleStart(ITelegramBotClient botClient, Message message)
     {
-        return await botClient.SendTextMessageAsync(
+        await botClient.SendTextMessageAsync(
             chatId: message.Chat.Id, 
             text: "Hello, just send me a short info you want to remember, and I'll guide you through our learning session");
     }
 
-    static async Task<Message> HandleTodo(ITelegramBotClient botClient, Message message)
+    static void HandleTodo(TelegramBotClient botClient, Message message)
     {
-        // TODO: schedule
-        return await botClient.SendTextMessageAsync(
-            chatId: message.Chat.Id, 
-            text: "You've got it.");
+        var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
+        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message.Text, fib), fib.Current);
     }
+
+    // public so that compiler could generate ExpressionTree for Hangfire 
+    public static void SendMessage(long chatId, string message, FibonacciTimeSpan fib)
+    {
+        botClient.SendTextMessageAsync(chatId, message).Result.Discard();
+
+        fib.Move();
+        Scheduler.Schedule(() => SendMessage(chatId, message, fib), fib.Current);
+    }
+
+    #endregion Handlers
 }
 
