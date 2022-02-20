@@ -25,8 +25,6 @@ public static class Program
     {
         using var cts = new CancellationTokenSource();
 
-        // Console.WriteLine(JsonConvert.SerializeObject(new Reminder(new FibonacciTimeSpan(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)), "lol")));
-
         Scheduler.InitJobStorage(conf[connectionString]);
         Handler.InitClient(conf[accessToken], cts.Token);
         Scheduler.RunServer();

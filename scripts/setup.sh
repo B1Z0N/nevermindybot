@@ -12,4 +12,4 @@ read -r token
 psql postgres -f setup.sql -v password="'${password}'"
 
 connection_string="User ID=nevermindy;Password=${password};Host=localhost;Port=5432;Database=nevermindydb;"
-echo "{\"ACCESS_TOKEN\":\"${token}\",\"CONNECTION_STRING\":\"${connection_string}\"}" > appsettings.prod.json
+echo "{\"ACCESS_TOKEN\":\"${token}\",\"CONNECTION_STRING\":\"${connection_string}\"}" > "../appsettings.prod.json"
