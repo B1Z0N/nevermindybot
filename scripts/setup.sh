@@ -5,9 +5,9 @@ cd "$script_path"
 
 echo "[nevermindy] Creating the database nevermindydb for user nevermindy."
 echo -n "[nevermindy] Please enter a password: "
-read password
+read -r password
 echo -n "[nevermindy] Please enter bot token(from BotFather): "
-read token
+read -r token
 
 psql postgres -f setup.sql -v password="'${password}'"
 
