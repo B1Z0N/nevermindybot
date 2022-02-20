@@ -5,8 +5,8 @@
 
 1. [Install](https://www.postgresql.org/download/) postgresql
 2. Run `./scripts/setup.sh` or
-  1. Create user `nevermindy` and database `nevermindydb` and grant all privileges on it to that user.
-  2. Fulfill `appsettings.exmpl.json` with your data and rename it to `appsettings.prod.json`.
+    - Create user `nevermindy` and database `nevermindydb` and grant all privileges on it to that user.
+    - Fulfill `appsettings.exmpl.json` with your data and rename it to `appsettings.prod.json`.
 
 3. Run `dotnet run --project src/nevermindy.csproj`
 
