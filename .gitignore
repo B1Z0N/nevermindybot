@@ -2,3 +2,4 @@ appsettings.prod.json
 *bin*
 *obj*
 *.swp
+log.txt

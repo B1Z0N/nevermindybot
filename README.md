@@ -7,8 +7,8 @@
 2. Run `./scripts/setup.sh` or
     - Create user `nevermindy` and database `nevermindydb` and grant all privileges on it to that user.
     - Fulfill `appsettings.exmpl.json` with your data and rename it to `appsettings.prod.json`.
-
-3. Run `dotnet run --project src/nevermindy.csproj`
+3. Run `./scripts/run.sh` or 
+    - Open `src/nevermindy.csproj` in your IDE and run it.
 
 # Why
 
