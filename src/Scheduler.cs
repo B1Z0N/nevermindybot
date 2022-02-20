@@ -22,7 +22,12 @@ public static class Scheduler
 
     public static void RunServer()
     {
-        using (var server = new BackgroundJobServer())
+        var options = new BackgroundJobServerOptions
+        {
+            SchedulePollingInterval = TimeSpan.FromHours(10)
+        };
+        
+        using (var server = new BackgroundJobServer(options))
         {
             Console.WriteLine("Press [ENTER] to stop...");
             Console.ReadLine();
