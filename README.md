@@ -1,13 +1,32 @@
-# nevermindy
-Spaced repetition todos 
+# What
+[Spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) telegram bot to help you recall info and remember all your stuff literally FOREVER*. 
 
-# Setup
+# How
 
-1. Fulfill the `appsettings.exmpl.json` file and rename it to `appsettings.prod.json`.
-2. `cd src; dotnet run`
+1. [Install](https://www.postgresql.org/download/) postgresql
+2. Run `./scripts/setup.sh` or
+  1. Create user `nevermindy` and database `nevermindydb` and grant all privileges on it to that user.
+  2. Fulfill `appsettings.exmpl.json` with your data and rename it to `appsettings.prod.json`.
+
+3. Run `dotnet run --project src/nevermindy.csproj`
+
+# Why
+
+Because It is very effective way of learning new things. 
+
+Personally I use it this way: 
+
+1. Doing something for some time(few days-few months). Like a deep dive into smth.
+2. Writing summary or thesis of what I've learned from this "deep" learning experience.
+3. Posting it to this bot so that I could get this stuff nested into my lifestyle.
+4. Profit.
 
 # Todo
 
-0. Docker
-1. Localization at least to russian
-2. Spam protection
+1. Docker
+2. Localization at least to russian
+3. Spam protection
+
+# PS
+
+*for your lifetime
