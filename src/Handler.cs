@@ -81,7 +81,8 @@ public static class Handler
     {
         await botClient.SendTextMessageAsync(
             chatId: message.Chat.Id, 
-            text: "Hello, just send me a short info you want to remember, and I'll guide you through our learning session");
+            text: "Hello, I'm a [spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) bot. Just send me a short info you want to remember, and I'll guide you through our learning session",
+            parseMode: ParseMode.Markdown);
     }
 
     #region Reminder handling
