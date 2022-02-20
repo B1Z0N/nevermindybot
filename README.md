@@ -1,10 +1,10 @@
 # What
 
-[Spaced repetition](https://gist.github.com/B1Z0N/0d03a2b6dfb7fdca3efeaa9802f443d8) telegram bot to help you recall info and remember all your stuff literally FOREVER*. 
+[Spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) telegram bot to help you recall info and remember all your stuff literally FOREVER*. 
 
 # How
 
-1. [Install](https://www.postgresql.org/download/) postgresql
+1. [Install](https://gist.github.com/B1Z0N/0d03a2b6dfb7fdca3efeaa9802f443d8) postgresql
 2. Run `./scripts/setup.sh` or
     - Create user `nevermindy` and database `nevermindydb` and grant all privileges on it to that user.
     - Fulfill `appsettings.exmpl.json` with your data and rename it to `appsettings.prod.json`.
