@@ -5,11 +5,14 @@ using Microsoft.Extensions.Configuration.Json;
 using System.Threading.Tasks;
 using System.Threading;
 
+using Newtonsoft.Json;
+
 using Telegram.Bot;
 using Telegram.Bot.Exceptions;
 using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
+using Telegram.Bot.Types.ReplyMarkups;
 
 namespace nevermindy;
 
@@ -46,8 +49,9 @@ public static class Handler
     {
         var handler  = update.Type switch
         {
-            UpdateType.Message => HandleMessageRecieved(botClient, update.Message!),
-            _                  => Task.CompletedTask,
+            UpdateType.Message       => HandleMessageRecieved(botClient, update.Message!),
+            UpdateType.CallbackQuery => HandleCallbackQueryReceived(botClient, update.CallbackQuery!),
+            _                        => Task.CompletedTask,
         };
         
         try
@@ -65,8 +69,12 @@ public static class Handler
         if (message.Type != MessageType.Text)
             return;
         
-        if (message.Text!.Split(' ')[0] == "/start") await HandleStart(botClient, message);
-        else HandleTodo(botClient as TelegramBotClient, message);
+        var task = message.Text!.Split(' ')[0] switch
+        {
+            "/start" => HandleStart(botClient, message),
+            _        => HandleTodo(botClient, message),
+        };
+        await task;
     }
 
     static async Task HandleStart(ITelegramBotClient botClient, Message message)
@@ -76,22 +84,74 @@ public static class Handler
             text: "Hello, just send me a short info you want to remember, and I'll guide you through our learning session");
     }
 
-    static void HandleTodo(TelegramBotClient botClient, Message message)
+    #region Reminder handling
+
+    static async Task HandleTodo(ITelegramBotClient botClient, Message message)
     {
         var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
+        await botClient.SendTextMessageAsync(
+            message.Chat.Id, 
+            $"Got it! I'll text you soon  *{EmojiGenerator.Get()}*",
+            parseMode: ParseMode.Markdown);
         Scheduler.Schedule(() => SendMessage(message.Chat.Id, message.Text, fib), fib.Current);
     }
 
     // public so that compiler could generate ExpressionTree for Hangfire 
-    public static void SendMessage(long chatId, string message, FibonacciTimeSpan fib)
+    public static void SendMessage(long chatId, string msg, FibonacciTimeSpan fib)
     {
-        botClient.SendTextMessageAsync(chatId, message).Result.Discard();
+        var (prevFib, nextFib) = (fib.MoveBack(), fib.Move());
 
-        Console.WriteLine(fib.Current);
-        fib.Move();
-        Console.WriteLine(fib.Current);
-        Scheduler.Schedule(() => SendMessage(chatId, message, fib), fib.Current);
+        var inlineKeyboard = new InlineKeyboardMarkup(new [] // reminders keyboard, see HandleCallbackQueryReceived for handling
+            {
+                new []
+                {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: prevFib.Current.ToHumanReadableString(),
+                        callbackData: prevFib.ToContinuedCallbackString()),
+                    InlineKeyboardButton.WithCallbackData(
+                        text: fib.Current.ToHumanReadableString(),
+                        callbackData: fib.ToContinuedCallbackString()),
+                    InlineKeyboardButton.WithCallbackData(
+                        text: nextFib.Current.ToHumanReadableString(),
+                        callbackData: nextFib.ToContinuedCallbackString())
+                },
+                new []
+                {
+                    InlineKeyboardButton.WithCallbackData(
+                        text: "Learnt", 
+                        callbackData: fib.ToLearnedCallbackString()),
+                },
+            });
+
+        var _ = botClient.SendTextMessageAsync(
+            chatId, 
+            $"Your reminder:\n\n`{msg}`\n\nWhen should I remind you next time?", 
+            replyMarkup: inlineKeyboard,
+            parseMode: ParseMode.Markdown).Result;
     }
+
+    // Handle reminders keys on keyboard, for the keys, see SendMessage
+    private static async Task HandleCallbackQueryReceived(ITelegramBotClient botClient, CallbackQuery callbackQuery)
+    {
+        var todo = callbackQuery.Message.Text.Split("\n\n")[1].Trim('`');
+        var chatId = callbackQuery.Message.Chat.Id;
+        var messageId = callbackQuery.Message.MessageId;
+
+        if (FibExtensions.IsLearned(callbackQuery.Data))
+        {
+            await botClient.EditMessageTextAsync(
+                chatId, messageId, text: $"`{todo}`\n\nDone✅", parseMode: ParseMode.Markdown);
+            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Congrats, you've made it!");
+        }
+        else if (FibExtensions.TryGetContinued(callbackQuery.Data, out var fib))
+        {
+            await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Postponed on {fib.Current.ToHumanReadableString()}");
+            await botClient.DeleteMessageAsync(chatId, messageId);
+            Scheduler.Schedule(() => SendMessage(chatId, todo, fib), fib.Current);
+        }
+    }
+
+    #endregion Reminder handling
 
     #endregion Handlers
 }

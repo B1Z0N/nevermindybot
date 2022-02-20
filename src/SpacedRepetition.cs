@@ -1,5 +1,7 @@
 using System;
 using Newtonsoft.Json;
+using Telegram.Bot.Types;
+using System.Text;
 
 namespace nevermindy;
 
@@ -23,7 +25,24 @@ public class FibonacciTimeSpan
 
     public FibonacciTimeSpan Move() 
     {
-        (Current, Next) = (Next, Current + Next);
-        return this;
+        return new FibonacciTimeSpan(Next, Current + Next);
     }
+
+    public FibonacciTimeSpan MoveBack()
+    {
+        return new FibonacciTimeSpan(Next - Current, Current);
+    }
+
+    public override string ToString()
+    {
+        return "Fib{" + Current + "," + Next + "}";
+    }
+
+    public static FibonacciTimeSpan Parse(string s)
+    {
+        var arr = new StringBuilder(s).Remove(s.Length - 1, 1).Remove(0, 4).ToString().Split(',', 2);
+        var (cur, next) = (TimeSpan.Parse(arr[0]), TimeSpan.Parse(arr[1]));
+        return new FibonacciTimeSpan(cur, next);
+    }
+
 }

@@ -10,6 +10,8 @@ using Telegram.Bot.Extensions.Polling;
 using Telegram.Bot.Types;
 using Telegram.Bot.Types.Enums;
 
+using Newtonsoft.Json;
+ 
 namespace nevermindy;
 
 public static class Program
@@ -22,6 +24,8 @@ public static class Program
     public static void Main()
     {
         using var cts = new CancellationTokenSource();
+
+        // Console.WriteLine(JsonConvert.SerializeObject(new Reminder(new FibonacciTimeSpan(TimeSpan.FromSeconds(1), TimeSpan.FromSeconds(3)), "lol")));
 
         Scheduler.InitJobStorage(conf[connectionString]);
         Handler.InitClient(conf[accessToken], cts.Token);
