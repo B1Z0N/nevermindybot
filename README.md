@@ -1,5 +1,6 @@
 # What
-[Spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) telegram bot to help you recall info and remember all your stuff literally FOREVER*. 
+
+[Spaced repetition](https://gist.github.com/B1Z0N/0d03a2b6dfb7fdca3efeaa9802f443d8) telegram bot to help you recall info and remember all your stuff literally FOREVER*. 
 
 # How
 
