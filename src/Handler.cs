@@ -92,7 +92,7 @@ public static class Handler
         var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
         await botClient.SendTextMessageAsync(
             message.Chat.Id, 
-            $"Got it! I'll text you soon  *{EmojiGenerator.Get()}*",
+            $"Got it! I'll text it to you tomorrow  *{EmojiGenerator.Get()}*",
             parseMode: ParseMode.Markdown);
         Scheduler.Schedule(() => SendMessage(message.Chat.Id, message.Text, fib), fib.Current);
     }

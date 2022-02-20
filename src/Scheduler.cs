@@ -24,7 +24,7 @@ public static class Scheduler
     {
         var options = new BackgroundJobServerOptions
         {
-            SchedulePollingInterval = TimeSpan.FromHours(10)
+            SchedulePollingInterval = TimeSpan.FromHours(1)
         };
         
         using (var server = new BackgroundJobServer(options))
