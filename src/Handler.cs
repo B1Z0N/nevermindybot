@@ -81,8 +81,7 @@ public static class Handler
     {
         await botClient.SendTextMessageAsync(
             chatId: message.Chat.Id, 
-            text: "Hello, I'm a [spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) bot. Just send me a short info you want to remember, and I'll guide you through our learning session",
-            parseMode: ParseMode.Markdown);
+            text: "Hello, I'm a [spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) bot. Just send me a short info you want to remember, and I'll guide you through our learning session");
     }
 
     #region Reminder handling
@@ -90,10 +89,11 @@ public static class Handler
     static async Task HandleTodo(ITelegramBotClient botClient, Message message)
     {
         var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
+        var emoji = System.Security.SecurityElement.Escape(EmojiGenerator.Get());
         await botClient.SendTextMessageAsync(
             message.Chat.Id, 
-            $"Got it! I'll text it to you tomorrow  *{EmojiGenerator.Get()}*",
-            parseMode: ParseMode.Markdown);
+            $"Got it! I'll text it to you tomorrow  <b>{emoji}</b>",
+            parseMode: ParseMode.Html);
         Scheduler.Schedule(() => SendMessage(message.Chat.Id, message.Text, fib), fib.Current);
     }
 
@@ -126,22 +126,20 @@ public static class Handler
 
         var _ = botClient.SendTextMessageAsync(
             chatId, 
-            $"Your reminder:\n\n`{msg}`\n\nWhen should I remind you next time?", 
-            replyMarkup: inlineKeyboard,
-            parseMode: ParseMode.Markdown).Result;
+            $"Your reminder:\n\n{msg}\n\nWhen should I remind you next time?", 
+            replyMarkup: inlineKeyboard).Result;
     }
 
     // Handle reminders keys on keyboard, for the keys, see SendMessage
     private static async Task HandleCallbackQueryReceived(ITelegramBotClient botClient, CallbackQuery callbackQuery)
     {
-        var todo = callbackQuery.Message.Text.Split("\n\n")[1].Trim('`');
+        var todo = callbackQuery.Message.Text.Split("\n\n")[1];
         var chatId = callbackQuery.Message.Chat.Id;
         var messageId = callbackQuery.Message.MessageId;
 
         if (FibExtensions.IsLearned(callbackQuery.Data))
         {
-            await botClient.EditMessageTextAsync(
-                chatId, messageId, text: $"`{todo}`\n\nDone✅", parseMode: ParseMode.Markdown);
+            await botClient.EditMessageTextAsync(chatId, messageId, text: $"{todo}\n\nDone✅");
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Congrats, you've made it!");
         }
         else if (FibExtensions.TryGetContinued(callbackQuery.Data, out var fib))
