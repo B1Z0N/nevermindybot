@@ -1,5 +1,7 @@
 using System;
+using System.Linq;
 using Newtonsoft.Json;
+using Telegram.Bot.Types;
 
 namespace nevermindy;
 
@@ -81,6 +83,7 @@ public static class FibExtensions
             }
             catch (Exception ex)
             {
+                Console.WriteLine($"{DateTime.Now} [ERROR] Can't parse FibonacciTimeSpan '{fib.ToString()}': {ex.ToString()}");
                 fib = null;
             }
         }
@@ -95,4 +98,33 @@ public static class EmojiGenerator
     private static Random Generator = new();
 
     public static string Get() => Pool[Generator.Next(0, Pool.Length)];
+}
+
+public static class MessageUtils
+{
+    public static Message AddPrefix(this Message m, string prefix)
+    {
+        m.Text = $"{prefix}{m.Text}";
+        m.Entities = m.Entities?.Select(e => { e.Offset += prefix.Length; return e; }).ToArray();
+        return m;
+    }
+
+    public static Message RemovePrefix(this Message m, int len)
+    {
+        m.Text = m.Text.Substring(len);
+        m.Entities = m.Entities?.Select(e => { e.Offset -= len; return e; }).ToArray();
+        return m;
+    }
+
+    public static Message AddPostfix(this Message m, string postfix)
+    {
+        m.Text = $"{m.Text}{postfix}";
+        return m;
+    }
+
+    public static Message RemovePostfix(this Message m, int len)
+    {
+        m.Text = m.Text.Substring(0, m.Text.Length - len);
+        return m;
+    }
 }

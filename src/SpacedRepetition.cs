@@ -1,14 +1,26 @@
 using System;
+using System.Text;
+using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration.Json;
+
 using Newtonsoft.Json;
 using Telegram.Bot.Types;
-using System.Text;
 
 namespace nevermindy;
 
 public static class SpacedRepetition
 {
-    public static TimeSpan FibFirst = TimeSpan.FromDays(1);
-    public static TimeSpan FibSecond = TimeSpan.FromDays(3); 
+    const string fibFirstConfKey = "FIBONACCI_TIMESPAN_FIRST";
+    const string fibSecondConfKey = "FIBONACCI_TIMESPAN_SECOND";
+
+    public static void InitFibonacci(IConfiguration conf)
+    {
+        if (conf[fibFirstConfKey] != null) FibFirst = TimeSpan.Parse(conf[fibFirstConfKey]);
+        if (conf[fibSecondConfKey] != null) FibSecond = TimeSpan.Parse(conf[fibSecondConfKey]);
+    }
+
+    public static TimeSpan FibFirst { get; private set; }  = TimeSpan.FromDays(1);
+    public static TimeSpan FibSecond { get; private set; } = TimeSpan.FromDays(3); 
 }
 
 public class FibonacciTimeSpan

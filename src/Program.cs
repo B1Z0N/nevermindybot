@@ -16,17 +16,16 @@ namespace nevermindy;
 
 public static class Program
 {
-    const string accessToken = "ACCESS_TOKEN";
-    const string connectionString = "CONNECTION_STRING";
+    const string accessTokenConfKey = "BOT_ACCESS_TOKEN";
     
     static IConfiguration conf = new ConfigurationBuilder().AddJsonFile("appsettings.prod.json", false, true).Build();
 
     public static void Main()
     {
         using var cts = new CancellationTokenSource();
-
-        Scheduler.InitJobStorage(conf[connectionString]);
-        Handler.InitClient(conf[accessToken], cts.Token);
+        SpacedRepetition.InitFibonacci(conf);
+        Scheduler.InitJobStorage(conf);
+        Handler.InitClient(conf[accessTokenConfKey], cts.Token);
         Scheduler.RunServer();
 
         cts.Cancel();
