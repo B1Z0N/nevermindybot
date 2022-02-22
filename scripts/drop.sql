@@ -1,2 +1,2 @@
-DROP DATABASE nevermindydb;
-DROP USER nevermindy;
+DROP DATABASE IF EXISTS nevermindydb;
+DROP USER IF EXISTS nevermindy;
