@@ -90,7 +90,7 @@ public static class Handler
     {
         var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
         var emoji = System.Security.SecurityElement.Escape(EmojiGenerator.Get());
-        var text = $"Got it! I'll text it to you tomorrow  <b>{emoji}</b>";
+        var text = $"Got it! I'll text it to you in {SpacedRepetition.FibFirst.ToHumanReadableString()}  <b>{emoji}</b>";
 
         await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html);
         message.AddPrefix("Your reminder:\n\n").AddPostfix("\n\nWhen should I remind you next time?");
