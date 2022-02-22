@@ -7,8 +7,8 @@ namespace nevermindy;
 
 public static class SpacedRepetition
 {
-    public static TimeSpan FibFirst = TimeSpan.FromDays(1);
-    public static TimeSpan FibSecond = TimeSpan.FromDays(3); 
+    public static TimeSpan FibFirst = TimeSpan.FromSeconds(1);
+    public static TimeSpan FibSecond = TimeSpan.FromSeconds(3); 
 }
 
 public class FibonacciTimeSpan

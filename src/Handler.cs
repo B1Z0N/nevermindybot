@@ -1,5 +1,6 @@
-using System.Security.AccessControl;
 using System;
+using System.Linq;
+using System.Security.AccessControl;
 using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using System.Threading.Tasks;
@@ -79,9 +80,8 @@ public static class Handler
 
     static async Task HandleStart(ITelegramBotClient botClient, Message message)
     {
-        await botClient.SendTextMessageAsync(
-            chatId: message.Chat.Id, 
-            text: "Hello, I'm a [spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) bot. Just send me a short info you want to remember, and I'll guide you through our learning session");
+        var text = "Hello, I'm a [spaced repetition](https://en.wikipedia.org/wiki/Spaced_repetition) bot. Just send me a short info you want to remember, and I'll guide you through our learning session";
+        await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Markdown);
     }
 
     #region Reminder handling
@@ -90,15 +90,15 @@ public static class Handler
     {
         var fib = new FibonacciTimeSpan(SpacedRepetition.FibFirst, SpacedRepetition.FibSecond);
         var emoji = System.Security.SecurityElement.Escape(EmojiGenerator.Get());
-        await botClient.SendTextMessageAsync(
-            message.Chat.Id, 
-            $"Got it! I'll text it to you tomorrow  <b>{emoji}</b>",
-            parseMode: ParseMode.Html);
-        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message.Text, fib), fib.Current);
+        var text = $"Got it! I'll text it to you tomorrow  <b>{emoji}</b>";
+
+        await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html);
+        message.AddPrefix("Your reminder:\n\n").AddPostfix("\n\nWhen should I remind you next time?");
+        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message, fib), fib.Current);
     }
 
     // public so that compiler could generate ExpressionTree for Hangfire 
-    public static void SendMessage(long chatId, string msg, FibonacciTimeSpan fib)
+    public static void SendMessage(long chatId, Message msg, FibonacciTimeSpan fib)
     {
         var (prevFib, nextFib) = (fib.MoveBack(), fib.Move());
 
@@ -125,28 +125,34 @@ public static class Handler
             });
 
         var _ = botClient.SendTextMessageAsync(
-            chatId, 
-            $"Your reminder:\n\n{msg}\n\nWhen should I remind you next time?", 
+            chatId, msg.Text, entities: msg.Entities, 
+            disableWebPagePreview: true, // opinionated, it will be better to not show that large picutre
             replyMarkup: inlineKeyboard).Result;
     }
 
     // Handle reminders keys on keyboard, for the keys, see SendMessage
     private static async Task HandleCallbackQueryReceived(ITelegramBotClient botClient, CallbackQuery callbackQuery)
     {
-        var todo = callbackQuery.Message.Text.Split("\n\n")[1];
-        var chatId = callbackQuery.Message.Chat.Id;
-        var messageId = callbackQuery.Message.MessageId;
+        const string delimiter = "\n\n";
+        var arr = callbackQuery.Message.Text.Split("\n\n");
+        var (prefix, todo, postfix) = (arr[0] + delimiter, arr[1], delimiter + arr[2]);
+        var msg = callbackQuery.Message;
 
         if (FibExtensions.IsLearned(callbackQuery.Data))
         {
-            await botClient.EditMessageTextAsync(chatId, messageId, text: $"{todo}\n\nDone✅");
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Congrats, you've made it!");
+
+            msg.RemovePrefix(prefix.Length).RemovePostfix(postfix.Length).AddPostfix("\n\nDone✅");
+            await botClient.EditMessageTextAsync(
+                msg.Chat.Id, msg.MessageId, msg.Text, 
+                entities: msg.Entities, disableWebPagePreview: true);
         }
         else if (FibExtensions.TryGetContinued(callbackQuery.Data, out var fib))
         {
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Postponed on {fib.Current.ToHumanReadableString()}");
-            await botClient.DeleteMessageAsync(chatId, messageId);
-            Scheduler.Schedule(() => SendMessage(chatId, todo, fib), fib.Current);
+
+            await botClient.DeleteMessageAsync(msg.Chat.Id, msg.MessageId);
+            Scheduler.Schedule(() => SendMessage(msg.Chat.Id, msg, fib), fib.Current);
         }
     }
 
