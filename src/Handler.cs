@@ -92,7 +92,7 @@ public static class Handler
         var emoji = System.Security.SecurityElement.Escape(EmojiGenerator.Get());
         var text = $"Got it! I'll text it to you tomorrow  <b>{emoji}</b>";
 
-        await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html);
+        await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html, replyToMessageId: message.MessageId);
         message.AddPrefix("Your reminder:\n\n").AddPostfix("\n\nWhen should I remind you next time?");
         Scheduler.Schedule(() => SendMessage(message.Chat.Id, message, fib), fib.Current);
     }
