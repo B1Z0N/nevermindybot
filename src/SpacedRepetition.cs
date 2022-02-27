@@ -1,3 +1,6 @@
+// disable the "MA0048: File name must match type name"
+#pragma warning disable MA0048
+
 using System;
 using System.Text;
 using Microsoft.Extensions.Configuration;
@@ -15,8 +18,8 @@ public static class SpacedRepetition
 
     public static void InitFibonacci(IConfiguration conf)
     {
-        if (conf[fibFirstConfKey] != null) FibFirst = TimeSpan.Parse(conf[fibFirstConfKey]);
-        if (conf[fibSecondConfKey] != null) FibSecond = TimeSpan.Parse(conf[fibSecondConfKey]);
+        if (conf[fibFirstConfKey] != null) FibFirst = TimeSpan.Parse(conf[fibFirstConfKey], FormatDefaults.FormatProvider);
+        if (conf[fibSecondConfKey] != null) FibSecond = TimeSpan.Parse(conf[fibSecondConfKey], FormatDefaults.FormatProvider);
     }
 
     public static TimeSpan FibFirst { get; private set; }  = TimeSpan.FromDays(1);
@@ -53,7 +56,7 @@ public class FibonacciTimeSpan
     public static FibonacciTimeSpan Parse(string s)
     {
         var arr = new StringBuilder(s).Remove(s.Length - 1, 1).Remove(0, 4).ToString().Split(',', 2);
-        var (cur, next) = (TimeSpan.Parse(arr[0]), TimeSpan.Parse(arr[1]));
+        var (cur, next) = (TimeSpan.Parse(arr[0], FormatDefaults.FormatProvider), TimeSpan.Parse(arr[1], FormatDefaults.FormatProvider));
         return new FibonacciTimeSpan(cur, next);
     }
 

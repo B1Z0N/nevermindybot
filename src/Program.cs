@@ -23,6 +23,7 @@ public static class Program
     public static void Main()
     {
         using var cts = new CancellationTokenSource();
+        
         SpacedRepetition.InitFibonacci(conf);
         Scheduler.InitJobStorage(conf);
         Handler.InitClient(conf[accessTokenConfKey], cts.Token);

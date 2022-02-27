@@ -1,9 +1,19 @@
+// disable the "MA0048: File name must match type name"
+#pragma warning disable MA0048
+
 using System;
+using System.Globalization;
 using System.Linq;
 using Newtonsoft.Json;
 using Telegram.Bot.Types;
 
 namespace nevermindy;
+
+public static class FormatDefaults
+{
+    public static IFormatProvider FormatProvider { get; } = CultureInfo.InvariantCulture;
+    public static StringComparison StringComparison { get; } = StringComparison.CurrentCulture;
+}
 
 public static class TimespanExtensions
 {
@@ -39,7 +49,7 @@ public class TimespanConverter : JsonConverter<TimeSpan>
 
     public override void WriteJson(JsonWriter writer, TimeSpan value, JsonSerializer serializer)
     {
-        var timespanFormatted = $"{value.ToString(TimeSpanFormatString)}";
+        var timespanFormatted = $"{value.ToString(TimeSpanFormatString, FormatDefaults.FormatProvider)}";
         writer.WriteValue(timespanFormatted);
     }
 
@@ -68,13 +78,13 @@ public static class FibExtensions
 
     public static bool IsLearned(string s)
     {
-        return s.StartsWith(LearnedDelimiter); 
+        return s.StartsWith(LearnedDelimiter, FormatDefaults.StringComparison);
     }
 
     public static bool TryGetContinued(string s, out FibonacciTimeSpan fib)
     {
         fib = null;
-        if (s.StartsWith(ContinuedDelimiter))
+        if (s.StartsWith(ContinuedDelimiter, FormatDefaults.StringComparison))
         {
             try 
             {

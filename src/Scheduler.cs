@@ -21,7 +21,8 @@ public static class Scheduler
             .UseColouredConsoleLogProvider()
             .UsePostgreSqlStorage(conf[connectionStringConfKey]);
 
-        if (conf[pollingIntervalConfKey] != null) PollingInterval = TimeSpan.Parse(conf[pollingIntervalConfKey]); 
+        if (conf[pollingIntervalConfKey] != null) 
+            PollingInterval = TimeSpan.Parse(conf[pollingIntervalConfKey], FormatDefaults.FormatProvider); 
     }
 
     public static void Schedule(Expression<Action> f, TimeSpan ts)

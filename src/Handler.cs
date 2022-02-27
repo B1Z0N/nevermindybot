@@ -5,6 +5,7 @@ using Microsoft.Extensions.Configuration;
 using Microsoft.Extensions.Configuration.Json;
 using System.Threading.Tasks;
 using System.Threading;
+using System.Globalization;
 
 using Newtonsoft.Json;
 
@@ -22,7 +23,7 @@ public static class Handler
     // static because 
     // 1. It's simple, no need to create custom JSON serializer for TelegramBotClient
     // 2. It's efficient, no need to keep botclient in storage, so we just keep the messages and recipients(see SendMessage)
-    public static ITelegramBotClient botClient;
+    public static ITelegramBotClient botClient { get; private set; }
 
     public static void InitClient(string botAccessToken, CancellationToken ct)
     {
@@ -33,6 +34,10 @@ public static class Handler
     }
 
     #region Handlers
+    
+    // disable the "MA0004: Use Task.ConfigureAwait(false) as the current SynchronizationContext is not needed"
+    // we don't need it, it's not library code anyway
+    #pragma warning disable MA0004
     
     public static Task HandleErrorAsync(ITelegramBotClient botClient, Exception exception, CancellationToken cancellationToken)
     {
@@ -157,6 +162,8 @@ public static class Handler
     }
 
     #endregion Reminder handling
+
+    #pragma warning restore MA0004
 
     #endregion Handlers
 }
