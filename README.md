@@ -25,8 +25,10 @@ Personally I use it this way:
 # Todo
 
 1. Docker
-2. Localization at least to russian
-3. Spam protection
+2. Localization to a lot of languages.
+3. Spam protection.
+
+For others possible addons, see open issues.
 
 # PS
 
