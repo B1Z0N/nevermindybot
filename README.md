@@ -29,6 +29,7 @@ Personally I use it this way:
 3. Spam protection.
 4. Automatic bot restart on error.
 5. Enable persistent logging like in [fonlybot](https://github.com/B1Z0N/fonlybot/commit/c4ed26c0c94cfe1231487008bfdf44dbb7ea8bdb).
+6. Add regular database backups. 
 
 For others possible addons, see open issues.
 
