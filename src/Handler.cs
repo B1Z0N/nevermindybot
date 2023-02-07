@@ -1,7 +1,7 @@
 using System;
 using System.Linq;
 using System.Security.AccessControl;
-using Microsoft.Extensions.Configuration;
+using Microsoft.Extensions.Configuration; 
 using Microsoft.Extensions.Configuration.Json;
 using System.Threading.Tasks;
 using System.Threading;
@@ -24,6 +24,8 @@ public static class Handler
     // 1. It's simple, no need to create custom JSON serializer for TelegramBotClient
     // 2. It's efficient, no need to keep botclient in storage, so we just keep the messages and recipients(see SendMessage)
     public static ITelegramBotClient botClient { get; private set; }
+
+    private const int telegramEditLimitInHours = 47;
 
     public static void InitClient(string botAccessToken, CancellationToken ct)
     {
@@ -99,7 +101,7 @@ public static class Handler
 
         await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html, replyToMessageId: message.MessageId);
         message.AddPrefix("Your reminder:\n\n").AddPostfix("\n\nWhen should I remind you next time?");
-        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message, fib), fib.Current);
+        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message, fib), fib.Current); 
     }
 
     // public so that compiler could generate ExpressionTree for Hangfire 
@@ -129,10 +131,30 @@ public static class Handler
                 },
             });
 
-        var _ = botClient.SendTextMessageAsync(
+        var oldMsg = botClient.SendTextMessageAsync(
             chatId, msg.Text, entities: msg.Entities, 
             disableWebPagePreview: true, // opinionated, it will be better to not show that large picutre
             replyMarkup: inlineKeyboard).Result;
+
+        // Now resend a message if we are about to loose the ability to edit it
+        // Remind the user to do the task
+        Scheduler.Schedule(
+            () => ResendMessage(chatId, oldMsg.MessageId, msg, fib), 
+            TimeSpan.FromHours(telegramEditLimitInHours)
+        ); 
+    }
+
+    public static void ResendMessage(long chatId, int oldMsgId, Message msg, FibonacciTimeSpan fib)
+    {
+        try 
+        {
+            botClient.DeleteMessageAsync(chatId, oldMsgId).GetAwaiter().GetResult(); 
+        }
+        catch (ApiRequestException)
+        {
+            return; // this task was already finished
+        }
+        SendMessage(chatId, msg, fib);
     }
 
     // Handle reminders keys on keyboard, for the keys, see SendMessage
@@ -148,9 +170,8 @@ public static class Handler
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Congrats, you've made it!");
 
             msg.RemovePrefix(prefix.Length).RemovePostfix(postfix.Length).AddPostfix("\n\nDone✅");
-            await botClient.EditMessageTextAsync(
-                msg.Chat.Id, msg.MessageId, msg.Text, 
-                entities: msg.Entities, disableWebPagePreview: true);
+            await botClient.DeleteMessageAsync(msg.Chat.Id, msg.MessageId); 
+            await botClient.SendTextMessageAsync(msg.Chat.Id, msg.Text, entities: msg.Entities);
         }
         else if (FibExtensions.TryGetContinued(callbackQuery.Data, out var fib))
         {

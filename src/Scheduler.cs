@@ -13,7 +13,7 @@ public static class Scheduler
     const string connectionStringConfKey = "CONNECTION_STRING";
     const string pollingIntervalConfKey = "POLLING_INTERVAL_TIMESPAN";
     
-    public static TimeSpan PollingInterval { get; private set; }  = TimeSpan.FromHours(1);
+    public static TimeSpan PollingInterval { get; private set; }  = TimeSpan.FromMinutes(20);
 
     public static void InitJobStorage(IConfiguration conf)
     {
@@ -25,9 +25,14 @@ public static class Scheduler
             PollingInterval = TimeSpan.Parse(conf[pollingIntervalConfKey], FormatDefaults.FormatProvider); 
     }
 
-    public static void Schedule(Expression<Action> f, TimeSpan ts)
+    public static string Schedule(Expression<Action> f, TimeSpan ts)
     {
-        BackgroundJob.Schedule(f, ts);
+        return BackgroundJob.Schedule(f, ts);
+    }
+
+    public static bool DeSchedule(string id)
+    {
+        return BackgroundJob.Delete(id);
     }
 
     public static void RunServer()
