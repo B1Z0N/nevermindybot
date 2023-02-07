@@ -23,12 +23,14 @@ public static class Program
     public static void Main()
     {
         using var cts = new CancellationTokenSource();
+        Database.Init(conf);
         
         SpacedRepetition.InitFibonacci(conf);
         Scheduler.InitJobStorage(conf);
         Handler.InitClient(conf[accessTokenConfKey], cts.Token);
         Scheduler.RunServer();
 
+        Database.Dispose();
         cts.Cancel();
     }
 }

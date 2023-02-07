@@ -25,7 +25,7 @@ public static class Handler
     // 2. It's efficient, no need to keep botclient in storage, so we just keep the messages and recipients(see SendMessage)
     public static ITelegramBotClient botClient { get; private set; }
 
-    private const int telegramEditLimitInHours = 47;
+    private static TimeSpan telegramEditLimit = TimeSpan.FromHours(47);
 
     public static void InitClient(string botAccessToken, CancellationToken ct)
     {
@@ -101,11 +101,11 @@ public static class Handler
 
         await botClient.SendTextMessageAsync(message.Chat.Id, text, ParseMode.Html, replyToMessageId: message.MessageId);
         message.AddPrefix("Your reminder:\n\n").AddPostfix("\n\nWhen should I remind you next time?");
-        Scheduler.Schedule(() => SendMessage(message.Chat.Id, message, fib), fib.Current); 
+        Scheduler.Schedule(() => SendMessage(message, fib), fib.Current); 
     }
 
     // public so that compiler could generate ExpressionTree for Hangfire 
-    public static void SendMessage(long chatId, Message msg, FibonacciTimeSpan fib)
+    public static void SendMessage(Message msg, FibonacciTimeSpan fib)
     {
         var (prevFib, nextFib) = (fib.MoveBack(), fib.Move());
 
@@ -131,30 +131,21 @@ public static class Handler
                 },
             });
 
-        var oldMsg = botClient.SendTextMessageAsync(
-            chatId, msg.Text, entities: msg.Entities, 
+        var reminderMsg = botClient.SendTextMessageAsync(
+            msg.Chat.Id, msg.Text, entities: msg.Entities, 
             disableWebPagePreview: true, // opinionated, it will be better to not show that large picutre
             replyMarkup: inlineKeyboard).Result;
 
         // Now resend a message if we are about to loose the ability to edit it
         // Remind the user to do the task
-        Scheduler.Schedule(
-            () => ResendMessage(chatId, oldMsg.MessageId, msg, fib), 
-            TimeSpan.FromHours(telegramEditLimitInHours)
-        ); 
+        var jobId = Scheduler.Schedule(() => ResendMessage(reminderMsg, msg, fib), telegramEditLimit); 
+        Database.InsertMessageAndItsDeletionJobId(reminderMsg, jobId).GetAwaiter().GetResult();
     }
 
-    public static void ResendMessage(long chatId, int oldMsgId, Message msg, FibonacciTimeSpan fib)
+    public static void ResendMessage(Message reminderMsg, Message originalMsg, FibonacciTimeSpan fib)
     {
-        try 
-        {
-            botClient.DeleteMessageAsync(chatId, oldMsgId).GetAwaiter().GetResult(); 
-        }
-        catch (ApiRequestException)
-        {
-            return; // this task was already finished
-        }
-        SendMessage(chatId, msg, fib);
+        botClient.DeleteMessageAsync(reminderMsg.Chat.Id, reminderMsg.MessageId).GetAwaiter().GetResult(); 
+        SendMessage(originalMsg, fib);
     }
 
     // Handle reminders keys on keyboard, for the keys, see SendMessage
@@ -167,18 +158,25 @@ public static class Handler
 
         if (FibExtensions.IsLearned(callbackQuery.Data))
         {
+            var jobId = await Database.GetDeletionJobIdByMessage(msg);
+            Scheduler.DeSchedule(jobId);
+
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Congrats, you've made it!");
 
             msg.RemovePrefix(prefix.Length).RemovePostfix(postfix.Length).AddPostfix("\n\nDone✅");
-            await botClient.DeleteMessageAsync(msg.Chat.Id, msg.MessageId); 
-            await botClient.SendTextMessageAsync(msg.Chat.Id, msg.Text, entities: msg.Entities);
+            await botClient.EditMessageTextAsync(
+                msg.Chat.Id, msg.MessageId, msg.Text, 
+                entities: msg.Entities, disableWebPagePreview: true);
         }
         else if (FibExtensions.TryGetContinued(callbackQuery.Data, out var fib))
         {
+            var jobId = await Database.GetDeletionJobIdByMessage(msg);
+            Scheduler.DeSchedule(jobId);
+
             await botClient.AnswerCallbackQueryAsync(callbackQuery.Id, $"Postponed on {fib.Current.ToHumanReadableString()}");
 
             await botClient.DeleteMessageAsync(msg.Chat.Id, msg.MessageId);
-            Scheduler.Schedule(() => SendMessage(msg.Chat.Id, msg, fib), fib.Current);
+            Scheduler.Schedule(() => SendMessage(msg, fib), fib.Current);
         }
     }
 

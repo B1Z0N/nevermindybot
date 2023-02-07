@@ -5,9 +5,9 @@ cd "$script_path"
 
 FIBONACCI_TIMESPAN_FIRST="1.00:00:00"
 FIBONACCI_TIMESPAN_SECOND="3.00:00:00"
-POLLING_INTERVAL_TIMESPAN="01:00:00"
+POLLING_INTERVAL_TIMESPAN="00:20:00"
 
-echo "[nevermindy] Creating the database nevermindydb for user nevermindy."
+echo    "[nevermindy] Creating the database nevermindydb for user nevermindy."
 
 echo -n "[nevermindy] Please enter a password: "
 read -r password
@@ -33,7 +33,8 @@ echo -n "[nevermindy] Enter the timespan(press enter for default): "
 read -r polling_interval_timespan
 polling_interval_timespan=${polling_interval_timespan:-$POLLING_INTERVAL_TIMESPAN}
 
-psql postgres -f setup.sql -v password="'${password}'"
+psql postgres -f setup_db.sql -v password="'${password}'"
+psql nevermindydb -f setup_schema.sql
 connection_string="User ID=nevermindy;Password=${password};Host=localhost;Port=5432;Database=nevermindydb;"
 
 res=$(sed -e "s/YOUR_BOT_ACCESS_TOKEN/$token/g" "../appsettings.exmpl.json" \
